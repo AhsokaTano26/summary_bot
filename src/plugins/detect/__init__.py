@@ -2,6 +2,7 @@ import os
 from nonebot import get_plugin_config, require, logger, get_driver, get_bot
 from nonebot.plugin import PluginMetadata
 import requests
+from nonebot_plugin_apscheduler import scheduler
 from apscheduler.triggers.cron import CronTrigger
 
 from .config import Config
@@ -15,7 +16,6 @@ __plugin_meta__ = PluginMetadata(
 URL = os.getenv('URL', "None")
 
 plugin_config = get_plugin_config(Config)
-scheduler = require("nonebot_plugin_apscheduler").scheduler
 @scheduler.scheduled_job(CronTrigger(minute="*/5"),misfire_grace_time=60)
 async def detect():
     try:

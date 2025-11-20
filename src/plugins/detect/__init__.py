@@ -1,7 +1,6 @@
 import os
 from nonebot import get_plugin_config, require, logger, get_driver, get_bot
 from nonebot.plugin import PluginMetadata
-scheduler = require("nonebot_plugin_apscheduler").scheduler
 import requests
 from apscheduler.triggers.cron import CronTrigger
 
@@ -16,7 +15,7 @@ __plugin_meta__ = PluginMetadata(
 URL = os.getenv('URL', "None")
 
 plugin_config = get_plugin_config(Config)
-
+scheduler = require("nonebot_plugin_apscheduler").scheduler
 @scheduler.scheduled_job(CronTrigger(minute="*/5"),misfire_grace_time=60)
 async def detect():
     try:
@@ -49,7 +48,7 @@ async def handle_bot_connect(bot):
     bot = get_bot()
     await bot.call_api("send_group_msg", **{
         "group_id": plugin_config.target_groups,
-        "message": f"nsybot已连接"
+        "message": f"summary_bot已连接"
     })
 
 @driver.on_bot_disconnect

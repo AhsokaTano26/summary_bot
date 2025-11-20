@@ -1,7 +1,6 @@
 import datetime
 import re
 import jieba
-import nonebot
 from apscheduler.triggers.cron import CronTrigger
 from nonebot import get_plugin_config, on_message, get_bot
 from nonebot.adapters.onebot.v11 import GroupMessageEvent

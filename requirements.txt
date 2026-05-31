@@ -158,3 +158,4 @@ requests-toolbelt==1.0.0
 websockets==11.0.3
 websocket-client==1.8.0
 nonechat==0.3.0
+openai>=1.0.0

@@ -8,3 +8,7 @@ class Config(BaseModel):
     ignore_users: list = [971852256, 2438868634]
     target_group: list = ast.literal_eval(os.getenv('GROUP_LIST', "None"))
     # target_group: list = [1016925587,339834885,1017112832,962870444,825771260]
+    llm_api_key: str = os.getenv('LLM_API_KEY', '')
+    llm_base_url: str = os.getenv('LLM_BASE_URL', 'https://api.deepseek.com')
+    llm_model: str = os.getenv('LLM_MODEL', 'deepseek-chat')
+    detail_group: int = int(os.getenv('DETAIL_GROUP', '658521872'))

@@ -6,6 +6,7 @@ from nonebot.adapters.onebot.v11 import GroupMessageEvent, MessageSegment
 from nonebot_plugin_orm import get_session
 from nonebot.log import logger
 from wordcloud import WordCloud
+from openai import AsyncOpenAI
 
 from .config import Config
 from .encrypt import encrypt
@@ -149,3 +150,49 @@ async def History():
                 sentiment=sentiment
             )
         logger.info(f"创建历史信息成功")
+
+async def llm_summary(group_id: int) -> str:
+    """调用 LLM API 生成今日群聊语义总结"""
+    async with get_session() as db_session:
+        messages = []
+        sheet = await DetailManger.get_all_student_id(db_session)
+        for id in sheet:
+            lanmsg = await DetailManger.get_Sign_by_student_id(db_session, id)
+            if int(lanmsg.group_id) == group_id:
+                messages.append(lanmsg.text)
+
+    if not messages:
+        return ""
+
+    # 取最近 200 条消息避免 token 过长
+    recent_messages = messages[-200:]
+    chat_log = "\n".join(recent_messages)
+
+    prompt = f"""以下是今天一个QQ群的聊天记录，请用中文生成一段简洁的每日总结（200字以内），包含：
+1. 今天讨论的主要话题
+2. 群里的整体氛围和情绪
+3. 重要的观点或结论
+
+聊天记录：
+{chat_log}"""
+
+    config = Config()
+    if not config.llm_api_key:
+        logger.warning("LLM_API_KEY 未配置，跳过 LLM 总结")
+        return ""
+
+    try:
+        client = AsyncOpenAI(
+            api_key=config.llm_api_key,
+            base_url=config.llm_base_url
+        )
+        response = await client.chat.completions.create(
+            model=config.llm_model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=500,
+            temperature=0.7
+        )
+        return response.choices[0].message.content.strip()
+    except Exception as e:
+        logger.error(f"LLM 总结生成失败: {e}")
+        return ""

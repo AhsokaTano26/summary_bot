@@ -1,4 +1,5 @@
 import datetime
+import os
 import re
 import jieba
 from apscheduler.triggers.cron import CronTrigger
@@ -14,7 +15,7 @@ from .config import Config
 from .encrypt import encrypt
 from .models import Detail
 from .models_method import DetailManger, ClipManger, HistoryManger
-from .function import Clip, summary_top_10, summary_top_3, History
+from .function import Clip, summary_top_10, summary_top_3, History, llm_summary
 
 __plugin_meta__ = PluginMetadata(
     name="summary_bot",
@@ -77,6 +78,10 @@ async def summary(event: GroupMessageEvent):
             else:
                 msg = await summary_top_10(group_id)
                 await cmd.send(msg)
+                # 发送 LLM 语义总结
+                llm_msg = await llm_summary(group_id)
+                if llm_msg:
+                    await cmd.send(llm_msg)
     except Exception as e:
         logger.error(f"创建信息时出错: {e}")
 
@@ -90,6 +95,9 @@ async def senf_summary():
         logger.info(f"创建历史信息成功")
     except Exception as e:
         logger.error(f"创建历史信息时出错: {e}")
+
+    # 发送详细结果到指定群
+    detail_group = config.detail_group
     for group_id in config.target_group:
         try:
             async with (get_session() as db_session):
@@ -102,13 +110,34 @@ async def senf_summary():
                     for i in msg:
                         mmsg += i
                     await bot.call_api("send_group_msg", group_id=group_id, message=mmsg)
+                    # 发送 LLM 语义总结
+                    llm_msg = await llm_summary(group_id)
+                    if llm_msg:
+                        await bot.call_api("send_group_msg", group_id=group_id, message=llm_msg)
+                        # 同步发送详细结果到 detail_group
+                        if detail_group and detail_group != group_id:
+                            await bot.call_api("send_group_msg", group_id=detail_group, message=f"[群{group_id}]\n{mmsg}\n{llm_msg}")
                 logger.info(f"发送 {group_id} 信息成功")
         except Exception as e:
             logger.error(f"创建信息时出错: {e}")
+
+    # 清理 daily_summary 图片
     try:
-        await ClipManger.delete_all_student_id(db_session)
-        logger.info(f"删除所有Clip信息成功")
-        await DetailManger.delete_all_student_id(db_session)
-        logger.info(f"删除所有Detail信息成功")
+        summary_dir = "data/daily_summary"
+        if os.path.exists(summary_dir):
+            for filename in os.listdir(summary_dir):
+                file_path = os.path.join(summary_dir, filename)
+                if os.path.isfile(file_path):
+                    os.remove(file_path)
+            logger.info(f"清理 {summary_dir} 图片成功")
+    except Exception as e:
+        logger.error(f"清理图片时出错: {e}")
+
+    try:
+        async with (get_session() as db_session):
+            await ClipManger.delete_all_student_id(db_session)
+            logger.info(f"删除所有Clip信息成功")
+            await DetailManger.delete_all_student_id(db_session)
+            logger.info(f"删除所有Detail信息成功")
     except Exception as e:
         logger.error(f"删除所有信息时出错: {e}")

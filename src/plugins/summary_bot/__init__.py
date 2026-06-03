@@ -114,9 +114,6 @@ async def senf_summary():
                     llm_msg = await llm_summary(group_id)
                     if llm_msg:
                         await bot.call_api("send_group_msg", group_id=group_id, message=llm_msg)
-                        # 同步发送详细结果到 detail_group
-                        if detail_group and detail_group != group_id:
-                            await bot.call_api("send_group_msg", group_id=detail_group, message=f"[群{group_id}]\n{mmsg}\n{llm_msg}")
                 logger.info(f"发送 {group_id} 信息成功")
         except Exception as e:
             logger.error(f"创建信息时出错: {e}")

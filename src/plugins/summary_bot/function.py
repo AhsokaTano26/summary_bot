@@ -173,6 +173,8 @@ async def llm_summary(group_id: int) -> str:
 2. 群里的整体氛围和情绪
 3. 重要的观点或结论
 
+要求：输出纯文本，不要使用任何markdown格式（不要用#、*、-、```等符号），直接用自然段落表述。
+
 聊天记录：
 {chat_log}"""
 

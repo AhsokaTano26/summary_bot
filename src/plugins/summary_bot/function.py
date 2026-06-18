@@ -154,19 +154,12 @@ async def History():
 async def llm_summary(group_id: int) -> str:
     """调用 LLM API 生成今日群聊语义总结"""
     async with get_session() as db_session:
-        messages = []
-        sheet = await DetailManger.get_all_student_id(db_session)
-        for id in sheet:
-            lanmsg = await DetailManger.get_Sign_by_student_id(db_session, id)
-            if int(lanmsg.group_id) == group_id:
-                messages.append(lanmsg.text)
+        messages = await DetailManger.get_texts_by_group_ordered(db_session, group_id)
 
     if not messages:
         return ""
 
-    # 取最近 200 条消息避免 token 过长
-    recent_messages = messages[-200:]
-    chat_log = "\n".join(recent_messages)
+    chat_log = "\n".join(messages)
 
     prompt = f"""以下是今天一个QQ群的聊天记录，请用中文生成一段简洁的每日总结（200字以内），包含：
 1. 今天讨论的主要话题

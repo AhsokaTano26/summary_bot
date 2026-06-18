@@ -13,6 +13,16 @@ class DetailManger:
         return {row[0] for row in result}
 
     @classmethod
+    async def get_texts_by_group_ordered(cls, session: async_scoped_session, group_id: int) -> list:
+        """按时间顺序获取指定群的所有消息文本"""
+        result = await session.execute(
+            select(Detail.text)
+            .where(Detail.group_id == str(group_id))
+            .order_by(Detail.updated.asc())
+        )
+        return [row[0] for row in result if row[0]]
+
+    @classmethod
     async def get_Sign_by_student_id(cls, session: async_scoped_session, student_id: str) -> Optional[Detail]:
         """根据 student_id 获取单个信息"""
         return await session.get(Detail, student_id)

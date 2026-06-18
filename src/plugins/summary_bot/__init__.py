@@ -38,7 +38,10 @@ async def collect_message(event: GroupMessageEvent):
         return
     group_id = event.group_id
     user_id = event.user_id
-    plain_text = re.sub(r"\[CQ:at,qq=\d+]|https?://\S+", "", event.message.extract_plain_text())
+    plain_text = re.sub(r"\[CQ:[^\]]*\]|https?://\S+", "", event.message.extract_plain_text()).strip()
+    # 过滤过短的无意义消息
+    if len(plain_text) < 2:
+        return
     id_msg = str(group_id) + str(user_id) + plain_text + str(datetime.datetime.now())
     id = await encrypt(id_msg)
     sentiment = SnowNLP(plain_text).sentiments
